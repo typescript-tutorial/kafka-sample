@@ -12,7 +12,7 @@ export class Writer<T> {
             this.log = console.log;
         };
         this.topic = this.writeConfig.topic;
-        const kafka = createKafka(this.writeConfig.client.username, this.writeConfig.client.password, this.writeConfig.brokers);
+        const kafka = createKafka(this.writeConfig.client.username, this.writeConfig.client.password, this.writeConfig.client.brokers);
         this.producer = kafka.producer();
         connect(this.producer, "Producer", this.log);
         this.write = this.write.bind(this);

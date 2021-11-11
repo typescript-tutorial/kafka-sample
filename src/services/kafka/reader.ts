@@ -12,9 +12,10 @@ export class Reader<T> {
     constructor(
         private readerConfig: ReaderConfig, 
         public logError?: (msg: any) => void,
-        public logInfo?: (msg: any) => void, json?: boolean) {
+        public logInfo?: (msg: any) => void, json?: boolean
+    ) {
         this.json = json;
-        const kafka = createKafka(this.readerConfig.client.username, this.readerConfig.client.password, this.readerConfig.brokers);
+        const kafka = createKafka(this.readerConfig.client.username, this.readerConfig.client.password, this.readerConfig.client.brokers);
         this.groupId = this.readerConfig.groupId;
         this.topic = this.readerConfig.topic;
         this.consumer = kafka.consumer({

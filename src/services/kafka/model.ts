@@ -1,5 +1,4 @@
 export interface ReaderConfig {
-  brokers: string[],
   client: ClientConfig,
   groupId: string,
   topic: string,
@@ -7,14 +6,14 @@ export interface ReaderConfig {
 }
 
 export interface WriterConfig {
-  brokers: string[],
   client: ClientConfig,
   topic: string,
 }
 
 export interface ClientConfig {
   username: string,
-  password: string
+  password: string,
+  brokers: string[],
 } 
 
 export interface RetryConfig{

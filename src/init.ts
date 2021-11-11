@@ -4,16 +4,24 @@ import { Attributes, Validator } from 'validator-x';
 import { Reader } from './services/kafka/reader';
 import { ErrorHandler, Handler, RetryService, RetryWriter } from 'mq-one';
 import { Writer } from './services/kafka/writer';
-import { ReaderConfig, WriterConfig } from './services/kafka/model';
+import { ClientConfig, ReaderConfig, WriterConfig } from './services/kafka/model';
 import { User } from 'models/User';
 import { MongoInserter } from 'mongodb-extension';
 import { RecordMetadata } from 'kafkajs';
+import { KafkaChecker } from './services/kafka/kafkaChecker';
+import { HealthController } from './controllers/HealthController';
+
+const client: ClientConfig = {
+  username: 'ah1t9hk0',
+  password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
+  brokers:['tricycle-01.srvs.cloudkafka.com:9094', 'tricycle-02.srvs.cloudkafka.com:9094', 'tricycle-03.srvs.cloudkafka.com:9094'],
+}
   
 const readerConfig: ReaderConfig= {
-  brokers:['tricycle-01.srvs.cloudkafka.com:9094'],
-  client: {
+  client:{
     username: 'ah1t9hk0',
-    password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-'
+    password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
+    brokers:['tricycle-01.srvs.cloudkafka.com:9094'],
   },
   groupId: 'my-group',
   topic: 'ah1t9hk0-default',
@@ -24,10 +32,10 @@ const readerConfig: ReaderConfig= {
 }
 
 const writerConfig: WriterConfig = {
-  brokers:['tricycle-01.srvs.cloudkafka.com:9094', 'tricycle-02.srvs.cloudkafka.com:9094', 'tricycle-03.srvs.cloudkafka.com:9094'],
   client: {
     username: 'ah1t9hk0',
-    password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-'
+    password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
+    brokers:['tricycle-01.srvs.cloudkafka.com:9094', 'tricycle-02.srvs.cloudkafka.com:9094', 'tricycle-03.srvs.cloudkafka.com:9094'],
   },
   topic: 'ah1t9hk0-default',
 };
@@ -58,6 +66,8 @@ const user: Attributes = {
 const retries = [15000, 10000, 20000];
 
 export function createContext(db: Db): ApplicationContext {
+    const kafkaChecker = new KafkaChecker(client);
+    const healthController = new HealthController([kafkaChecker]);
     const writer = new MongoInserter(db.collection('users'), 'id');
     const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
     const writerKafka = new Writer<User>(writerConfig, log);
@@ -66,7 +76,7 @@ export function createContext(db: Db): ApplicationContext {
     const validator = new Validator<User>(user, true);
     const handler = new Handler<User, RecordMetadata[]>(retryWriter.write, validator.validate , retries, errorHandler.error, log, log, retryService.retry, 3, 'retry');
     const reader = new Reader<User>(readerConfig, log);
-    const ctx: ApplicationContext = {read: reader.read, handle: handler.handle};
+    const ctx: ApplicationContext = {read: reader.read, handle: handler.handle, healthController};
     return ctx;
 }
 
