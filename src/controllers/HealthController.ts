@@ -1,4 +1,4 @@
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 import { check } from '../services/kafka/health';
 import { HealthChecker } from '../services/kafka/kafkaChecker';
 
