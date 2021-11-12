@@ -6,7 +6,7 @@ import { ErrorHandler, Handler, RetryService, RetryWriter } from 'mq-one';
 import { Attributes, Validator } from 'validator-x';
 import { ApplicationContext } from './context';
 import { HealthController } from './controllers/HealthController';
-import { KafkaChecker } from './services/kafka/kafkaChecker';
+import { KafkaChecker } from './services/kafka/checker';
 import { ClientConfig, ReaderConfig, WriterConfig } from './services/kafka/model';
 import { Reader } from './services/kafka/reader';
 import { Writer } from './services/kafka/writer';

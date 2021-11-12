@@ -1,5 +1,5 @@
 import { Producer } from 'kafkajs';
-import { createKafka } from './kafkaClient';
+import { createKafka } from './kafka';
 import { ClientConfig } from './model';
 
 export interface AnyMap {

@@ -1,7 +1,7 @@
 import { Consumer, IHeaders } from 'kafkajs';
 import { StringMap, toString } from 'mq-one';
 import { connect } from './connect';
-import { createKafka } from './kafkaClient';
+import { createKafka } from './kafka';
 import { ReaderConfig } from './model';
 
 export class Reader<T> {

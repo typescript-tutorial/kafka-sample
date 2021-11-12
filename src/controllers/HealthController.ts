@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-import { check } from '../services/kafka/health';
-import { HealthChecker } from '../services/kafka/kafkaChecker';
+import { check, HealthChecker } from '../services/kafka/health';
 
 export class HealthController {
   constructor(protected checkers: HealthChecker[]) {

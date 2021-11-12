@@ -1,7 +1,7 @@
 import { Message, Producer, RecordMetadata } from 'kafkajs';
 import { StringMap } from 'mq-one';
 import { connect } from './connect';
-import { createKafka } from './kafkaClient';
+import { createKafka } from './kafka';
 import { WriterConfig } from './model';
 
 export class Writer<T> {
