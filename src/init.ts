@@ -1,10 +1,10 @@
+import { HealthController } from 'express-ext';
 import { RecordMetadata } from 'kafkajs';
 import { Db } from 'mongodb';
-import { MongoInserter } from 'mongodb-extension';
+import { MongoChecker, MongoInserter } from 'mongodb-extension';
 import { ErrorHandler, Handler, RetryService, RetryWriter } from 'mq-one';
 import { Attributes, Validator } from 'validator-x';
 import { ApplicationContext } from './context';
-import { HealthController } from './controllers/HealthController';
 import { User } from './models/User';
 import { KafkaChecker } from './services/kafka/checker';
 import { ClientConfig, ConsumerConfig, ProducerConfig } from './services/kafka/model';
@@ -66,8 +66,9 @@ const user: Attributes = {
 const retries = [15000, 10000, 20000];
 
 export function createContext(db: Db): ApplicationContext {
+  const mongoChecker = new MongoChecker(db);
   const kafkaChecker = new KafkaChecker(client);
-  const health = new HealthController([kafkaChecker]);
+  const health = new HealthController([mongoChecker, kafkaChecker]);
   const writer = new MongoInserter(db.collection('users'), 'id');
   const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
   const sender = createSender<User>(producerConfig, log);

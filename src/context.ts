@@ -1,5 +1,5 @@
+import { HealthController } from 'express-ext';
 import { StringMap } from 'mq-one';
-import { HealthController } from './controllers/HealthController';
 import { User } from './models/User';
 
 export interface ApplicationContext {
