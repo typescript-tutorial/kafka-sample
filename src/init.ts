@@ -67,16 +67,16 @@ const retries = [15000, 10000, 20000];
 
 export function createContext(db: Db): ApplicationContext {
   const kafkaChecker = new KafkaChecker(client);
-  const healthController = new HealthController([kafkaChecker]);
+  const health = new HealthController([kafkaChecker]);
   const writer = new MongoInserter(db.collection('users'), 'id');
   const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
-  const kafkaSender = createSender<User>(producerConfig, log);
-  const retryService = new RetryService<User, RecordMetadata[]>(kafkaSender.send, log, log);
+  const sender = createSender<User>(producerConfig, log);
+  const retryService = new RetryService<User, RecordMetadata[]>(sender.send, log, log);
   const errorHandler = new ErrorHandler(log);
   const validator = new Validator<User>(user, true);
   const handler = new Handler<User, RecordMetadata[]>(retryWriter.write, validator.validate, retries, errorHandler.error, log, log, retryService.retry, 3, 'retry');
   const subscriber = createSubscriber<User>(consumerConfig, log, log);
-  const ctx: ApplicationContext = { read: subscriber.subscribe, handle: handler.handle, healthController };
+  const ctx: ApplicationContext = { read: subscriber.subscribe, handle: handler.handle, health };
   return ctx;
 }
 
