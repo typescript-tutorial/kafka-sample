@@ -83,11 +83,9 @@ export function createContext(db: Db): ApplicationContext {
   const ctx: ApplicationContext = { read: subscriber.subscribe, handle: handler.handle, health };
   return ctx;
 }
-
 export function log(msg: any): void {
   console.log(JSON.stringify(msg));
 }
-
 export function writeUser(msg: User): Promise<number> {
   console.log('Error: ' + JSON.stringify(msg));
   return Promise.resolve(1);
