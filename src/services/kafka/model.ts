@@ -1,10 +1,10 @@
-export interface ReaderConfig {
+export interface ConsumerConfig {
   client: ClientConfig;
   groupId: string;
   topic: string;
-  retry: RetryConfig;
+  retry?: RetryConfig;
 }
-export interface WriterConfig {
+export interface ProducerConfig {
   client: ClientConfig;
   topic: string;
 }

@@ -2,19 +2,21 @@ import { Message, Producer, RecordMetadata } from 'kafkajs';
 import { StringMap } from 'mq-one';
 import { connect } from './connect';
 import { createKafka } from './kafka';
-import { WriterConfig } from './model';
+import { ProducerConfig } from './model';
 
+export function createProducer(conf: ProducerConfig, log?: (msg: any) => void): Producer {
+  const kafka = createKafka(conf.client.username, conf.client.password, conf.client.brokers);
+  const producer = kafka.producer();
+  connect(producer, 'Producer', log);
+  return producer;
+}
+export function createSender<T>(conf: ProducerConfig, log?: (msg: any) => void): Sender<T> {
+  const p = createProducer(conf, log);
+  const s = new Sender(p, conf.topic);
+  return s;
+}
 export class Sender<T> {
-  private producer: Producer;
-  private topic: string;
-  constructor(private writeConfig: WriterConfig, private log?: (msg: any) => void) {
-    if (!this.log) {
-      this.log = console.log;
-    }
-    this.topic = this.writeConfig.topic;
-    const kafka = createKafka(this.writeConfig.client.username, this.writeConfig.client.password, this.writeConfig.client.brokers);
-    this.producer = kafka.producer();
-    connect(this.producer, 'Producer', this.log);
+  constructor(public producer: Producer, public topic: string) {
     this.send = this.send.bind(this);
   }
   async send(data: T, attributes?: StringMap): Promise<RecordMetadata[]> {

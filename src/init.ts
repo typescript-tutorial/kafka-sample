@@ -1,15 +1,15 @@
 import { RecordMetadata } from 'kafkajs';
-import { User } from 'models/User';
 import { Db } from 'mongodb';
 import { MongoInserter } from 'mongodb-extension';
 import { ErrorHandler, Handler, RetryService, RetryWriter } from 'mq-one';
 import { Attributes, Validator } from 'validator-x';
 import { ApplicationContext } from './context';
 import { HealthController } from './controllers/HealthController';
+import { User } from './models/User';
 import { KafkaChecker } from './services/kafka/checker';
-import { ClientConfig, ReaderConfig, WriterConfig } from './services/kafka/model';
-import { Sender } from './services/kafka/sender';
-import { Subscriber } from './services/kafka/subscriber';
+import { ClientConfig, ConsumerConfig, ProducerConfig } from './services/kafka/model';
+import { createSender } from './services/kafka/sender';
+import { createSubscriber } from './services/kafka/subscriber';
 
 const client: ClientConfig = {
   username: 'ah1t9hk0',
@@ -17,7 +17,7 @@ const client: ClientConfig = {
   brokers: ['tricycle-01.srvs.cloudkafka.com:9094', 'tricycle-02.srvs.cloudkafka.com:9094', 'tricycle-03.srvs.cloudkafka.com:9094'],
 };
 
-const readerConfig: ReaderConfig = {
+const consumerConfig: ConsumerConfig = {
   client: {
     username: 'ah1t9hk0',
     password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
@@ -31,7 +31,7 @@ const readerConfig: ReaderConfig = {
   }
 };
 
-const writerConfig: WriterConfig = {
+const producerConfig: ProducerConfig = {
   client: {
     username: 'ah1t9hk0',
     password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
@@ -70,13 +70,13 @@ export function createContext(db: Db): ApplicationContext {
   const healthController = new HealthController([kafkaChecker]);
   const writer = new MongoInserter(db.collection('users'), 'id');
   const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
-  const writerKafka = new Sender<User>(writerConfig, log);
-  const retryService = new RetryService<User, RecordMetadata[]>(writerKafka.send, log, log);
+  const kafkaSender = createSender<User>(producerConfig, log);
+  const retryService = new RetryService<User, RecordMetadata[]>(kafkaSender.send, log, log);
   const errorHandler = new ErrorHandler(log);
   const validator = new Validator<User>(user, true);
   const handler = new Handler<User, RecordMetadata[]>(retryWriter.write, validator.validate, retries, errorHandler.error, log, log, retryService.retry, 3, 'retry');
-  const reader = new Subscriber<User>(readerConfig, log);
-  const ctx: ApplicationContext = { read: reader.subscribe, handle: handler.handle, healthController };
+  const subscriber = createSubscriber<User>(consumerConfig, log, log);
+  const ctx: ApplicationContext = { read: subscriber.subscribe, handle: handler.handle, healthController };
   return ctx;
 }
 

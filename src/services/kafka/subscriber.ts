@@ -2,26 +2,28 @@ import { Consumer, IHeaders } from 'kafkajs';
 import { StringMap, toString } from 'mq-one';
 import { connect } from './connect';
 import { createKafka } from './kafka';
-import { ReaderConfig } from './model';
+import { ConsumerConfig } from './model';
 
+export function createConsumer(conf: ConsumerConfig, logInfo?: (msg: any) => void): Consumer {
+  const kafka = createKafka(conf.client.username, conf.client.password, conf.client.brokers);
+  const consumer = kafka.consumer({
+    groupId: conf.groupId,
+  });
+  connect(consumer, 'Consumer', logInfo);
+  return consumer;
+}
+export function createSubscriber<T>(conf: ConsumerConfig, logError?: (msg: any) => void, logInfo?: (msg: any) => void, json?: boolean): Subscriber<T> {
+  const c = createConsumer(conf, logInfo);
+  const s = new Subscriber<T>(c, conf.topic, logError, json);
+  return s;
+}
 export class Subscriber<T> {
-  private consumer: Consumer;
-  private groupId: string;
-  private topic: string;
-  json?: boolean;
   constructor(
-    private readerConfig: ReaderConfig,
+    public consumer: Consumer,
+    public topic: string,
     public logError?: (msg: any) => void,
-    public logInfo?: (msg: any) => void, json?: boolean
+    public json?: boolean
   ) {
-    this.json = json;
-    const kafka = createKafka(this.readerConfig.client.username, this.readerConfig.client.password, this.readerConfig.client.brokers);
-    this.groupId = this.readerConfig.groupId;
-    this.topic = this.readerConfig.topic;
-    this.consumer = kafka.consumer({
-      groupId: this.groupId,
-    });
-    connect(this.consumer, 'Consumer', this.logInfo);
     this.subscribe = this.subscribe.bind(this);
   }
   async subscribe(handle: (data: T, attributes?: StringMap) => Promise<number>): Promise<void> {
@@ -55,7 +57,7 @@ export class Subscriber<T> {
   }
 }
 
-function mapHeader(headers?: IHeaders): StringMap {
+export function mapHeader(headers?: IHeaders): StringMap {
   const attr: StringMap = {};
   if (headers) {
     const keys = Object.keys(headers);
