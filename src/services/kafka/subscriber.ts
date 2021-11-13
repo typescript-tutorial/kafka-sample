@@ -4,7 +4,7 @@ import { connect } from './connect';
 import { createKafka } from './kafka';
 import { ReaderConfig } from './model';
 
-export class Reader<T> {
+export class Subscriber<T> {
   private consumer: Consumer;
   private groupId: string;
   private topic: string;
@@ -22,9 +22,9 @@ export class Reader<T> {
       groupId: this.groupId,
     });
     connect(this.consumer, 'Consumer', this.logInfo);
-    this.read = this.read.bind(this);
+    this.subscribe = this.subscribe.bind(this);
   }
-  async read(handle: (data: T, attributes?: StringMap) => Promise<number>): Promise<void> {
+  async subscribe(handle: (data: T, attributes?: StringMap) => Promise<number>): Promise<void> {
     try {
       // fromBeginning config option calling, true for "earliest" , false for "latest"
       await this.consumer.subscribe({ topic: this.topic, fromBeginning: true });
@@ -33,7 +33,7 @@ export class Reader<T> {
           try {
             if (message.value) {
               const data = (this.json ? JSON.parse(message.value.toString()) : message.value.toString());
-              const attr: StringMap = convertStringMap(message.headers);
+              const attr: StringMap = mapHeader(message.headers);
               await handle(data, attr);
             } else {
               if (this.logError) {
@@ -55,7 +55,7 @@ export class Reader<T> {
   }
 }
 
-function convertStringMap(headers?: IHeaders): StringMap {
+function mapHeader(headers?: IHeaders): StringMap {
   const attr: StringMap = {};
   if (headers) {
     const keys = Object.keys(headers);

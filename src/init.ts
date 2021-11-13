@@ -8,8 +8,8 @@ import { ApplicationContext } from './context';
 import { HealthController } from './controllers/HealthController';
 import { KafkaChecker } from './services/kafka/checker';
 import { ClientConfig, ReaderConfig, WriterConfig } from './services/kafka/model';
-import { Reader } from './services/kafka/reader';
-import { Writer } from './services/kafka/writer';
+import { Sender } from './services/kafka/sender';
+import { Subscriber } from './services/kafka/subscriber';
 
 const client: ClientConfig = {
   username: 'ah1t9hk0',
@@ -70,13 +70,13 @@ export function createContext(db: Db): ApplicationContext {
   const healthController = new HealthController([kafkaChecker]);
   const writer = new MongoInserter(db.collection('users'), 'id');
   const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
-  const writerKafka = new Writer<User>(writerConfig, log);
-  const retryService = new RetryService<User, RecordMetadata[]>(writerKafka.write, log, log);
+  const writerKafka = new Sender<User>(writerConfig, log);
+  const retryService = new RetryService<User, RecordMetadata[]>(writerKafka.send, log, log);
   const errorHandler = new ErrorHandler(log);
   const validator = new Validator<User>(user, true);
   const handler = new Handler<User, RecordMetadata[]>(retryWriter.write, validator.validate, retries, errorHandler.error, log, log, retryService.retry, 3, 'retry');
-  const reader = new Reader<User>(readerConfig, log);
-  const ctx: ApplicationContext = { read: reader.read, handle: handler.handle, healthController };
+  const reader = new Subscriber<User>(readerConfig, log);
+  const ctx: ApplicationContext = { read: reader.subscribe, handle: handler.handle, healthController };
   return ctx;
 }
 

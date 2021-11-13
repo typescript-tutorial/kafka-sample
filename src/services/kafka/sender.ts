@@ -4,7 +4,7 @@ import { connect } from './connect';
 import { createKafka } from './kafka';
 import { WriterConfig } from './model';
 
-export class Writer<T> {
+export class Sender<T> {
   private producer: Producer;
   private topic: string;
   constructor(private writeConfig: WriterConfig, private log?: (msg: any) => void) {
@@ -15,9 +15,9 @@ export class Writer<T> {
     const kafka = createKafka(this.writeConfig.client.username, this.writeConfig.client.password, this.writeConfig.client.brokers);
     this.producer = kafka.producer();
     connect(this.producer, 'Producer', this.log);
-    this.write = this.write.bind(this);
+    this.send = this.send.bind(this);
   }
-  async write(data: T, attributes?: StringMap): Promise<RecordMetadata[]> {
+  async send(data: T, attributes?: StringMap): Promise<RecordMetadata[]> {
     const msg: Message = {
       value: JSON.parse(data as any),
       headers: attributes
