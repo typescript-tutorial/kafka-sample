@@ -10,17 +10,13 @@ export interface HealthChecker {
   build(data: AnyMap, error: any): AnyMap;
   check(): Promise<AnyMap>;
 }
-
-export interface CheckResult {
-  status: string;
-  details: AnyMap;
+export function createKafkaChecker(conf: ClientConfig, service?: string, timeout?: number): KafkaChecker {
+  const kafka = createKafka(conf.username, conf.password, conf.brokers);
+  const producer = kafka.producer();
+  return new KafkaChecker(producer, service, timeout);
 }
-
 export class KafkaChecker {
-  produce: Producer;
-  constructor(public config: ClientConfig, public service?: string, private timeout?: number) {
-    const kafka = createKafka(this.config.username, this.config.password, this.config.brokers);
-    this.produce = kafka.producer();
+  constructor(public producer: Producer, public service?: string, private timeout?: number) {
     this.check = this.check.bind(this);
     this.name = this.name.bind(this);
     this.build = this.build.bind(this);
@@ -29,7 +25,7 @@ export class KafkaChecker {
     const obj = {} as AnyMap;
     const promise = new Promise<any>(async (resolve, reject) => {
       try {
-        await this.produce.connect();
+        await this.producer.connect();
         resolve(obj);
       } catch (err) {
         reject(`Database down!`);
