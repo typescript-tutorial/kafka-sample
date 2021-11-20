@@ -1,10 +1,10 @@
 import { HealthController } from 'express-ext';
 import { RecordMetadata } from 'kafkajs';
 import { Db } from 'mongodb';
-import { MongoChecker, MongoInserter } from 'mongodb-extension';
+import { MongoChecker, MongoUpserter } from 'mongodb-extension';
 import { ErrorHandler, Handler, RetryService, RetryWriter, StringMap } from 'mq-one';
 import { Attributes, Validator } from 'validation-core';
-import { ClientConfig, ConsumerConfig, createKafkaChecker, createSender, createSubscriber, ProducerConfig } from './services/kafka';
+import { ClientConfig, ConsumerConfig, createKafkaChecker, createSender, createSubscriber, ProducerConfig } from './kafka';
 
 const client: ClientConfig = {
   username: 'ah1t9hk0',
@@ -72,7 +72,7 @@ export function createContext(db: Db): ApplicationContext {
   const mongoChecker = new MongoChecker(db);
   const kafkaChecker = createKafkaChecker(client);
   const health = new HealthController([mongoChecker, kafkaChecker]);
-  const writer = new MongoInserter(db.collection('users'), 'id');
+  const writer = new MongoUpserter(db.collection('users'), 'id');
   const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
   const sender = createSender<User>(producerConfig, log);
   const retryService = new RetryService<User, RecordMetadata[]>(sender.send, log, log);
