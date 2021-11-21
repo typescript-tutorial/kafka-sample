@@ -19,19 +19,15 @@ export class Sender<T> {
   constructor(public producer: Producer, public topic: string) {
     this.send = this.send.bind(this);
   }
-  async send(data: T, headers?: StringMap): Promise<RecordMetadata[]> {
+  send(data: T, headers?: StringMap): Promise<RecordMetadata[]> {
     const msg: Message = {
       value: JSON.parse(data as any),
       headers
     };
-    try {
-      return await this.producer.send({
-        topic: this.topic,
-        messages: [msg],
-        acks: 1,
-      });
-    } catch (err) {
-      throw err;
-    }
+    return this.producer.send({
+      topic: this.topic,
+      messages: [msg],
+      acks: 1,
+    });
   }
 }

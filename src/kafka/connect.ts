@@ -1,13 +1,9 @@
 import { Consumer, Producer } from 'kafkajs';
 
-export async function connect(kafka: Consumer | Producer, name: string, log?: (msg: any) => void) {
+export function connect(kafka: Consumer | Producer, name: string, log?: (msg: any) => void): Promise<void> {
+  const lg = (log ? log : console.log);
   if (!log) {
     log = console.log;
   }
-  try {
-    await kafka.connect();
-    log(`${name} connected`);
-  } catch (err) {
-    log(`${name} connected feild: ${err}`);
-  }
+  return kafka.connect().then(() => lg(`${name} connected`)).catch(err => lg(`${name} connected feild: ${err}`));
 }

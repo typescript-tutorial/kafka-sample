@@ -16,24 +16,18 @@ export function createKafkaChecker(conf: ClientConfig, service?: string, timeout
   return new KafkaChecker(producer, service, timeout);
 }
 export class KafkaChecker {
-  constructor(public producer: Producer, public service?: string, private timeout?: number) {
+  timeout: number;
+  constructor(public producer: Producer, public service?: string, timeout?: number) {
+    this.timeout = (timeout && timeout > 0 ? timeout : 4200);
     this.check = this.check.bind(this);
     this.name = this.name.bind(this);
     this.build = this.build.bind(this);
   }
   check(): Promise<AnyMap> {
     const obj = {} as AnyMap;
-    const promise = new Promise<any>(async (resolve, reject) => {
-      try {
-        await this.producer.connect();
-        resolve(obj);
-      } catch (err) {
-        reject(`Database down!`);
-      }
+    const promise = new Promise<any>((resolve, reject) => {
+      return this.producer.connect().then(() => resolve(obj)).catch(err => reject(`Database down!`));
     });
-    if (!this.timeout) {
-      this.timeout = 4200;
-    }
     if (this.timeout > 0) {
       return promiseTimeOut(this.timeout, promise);
     } else {
