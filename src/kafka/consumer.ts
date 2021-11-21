@@ -1,10 +1,10 @@
-import { Consumer, IHeaders, KafkaMessage } from 'kafkajs';
+import { Consumer as KafkaConsumer, IHeaders, KafkaMessage } from 'kafkajs';
 import { StringMap, toString } from 'mq-one';
 import { connect } from './connect';
 import { createKafka } from './kafka';
 import { ConsumerConfig } from './model';
 
-export function createConsumer(conf: ConsumerConfig, logInfo?: (msg: any) => void): Consumer {
+export function createKafkaConsumer(conf: ConsumerConfig, logInfo?: (msg: any) => void): KafkaConsumer {
   const kafka = createKafka(conf.client.username, conf.client.password, conf.client.brokers);
   const consumer = kafka.consumer({
     groupId: conf.groupId,
@@ -12,14 +12,14 @@ export function createConsumer(conf: ConsumerConfig, logInfo?: (msg: any) => voi
   connect(consumer, 'Consumer', logInfo);
   return consumer;
 }
-export function createSubscriber<T>(conf: ConsumerConfig, logError?: (msg: any) => void, logInfo?: (msg: any) => void, json?: boolean): Subscriber<T> {
-  const c = createConsumer(conf, logInfo);
-  const s = new Subscriber<T>(c, conf.topic, logError, json);
+export function createConsumer<T>(conf: ConsumerConfig, logError?: (msg: any) => void, logInfo?: (msg: any) => void, json?: boolean): Consumer<T> {
+  const c = createKafkaConsumer(conf, logInfo);
+  const s = new Consumer<T>(c, conf.topic, logError, json);
   return s;
 }
-export class Subscriber<T> {
+export class Consumer<T> {
   constructor(
-    public consumer: Consumer,
+    public consumer: KafkaConsumer,
     public topic: string,
     public logError?: (msg: any) => void,
     public json?: boolean
@@ -35,7 +35,7 @@ export class Subscriber<T> {
           try {
             if (message.value) {
               const data = (this.json ? JSON.parse(message.value.toString()) : message.value.toString());
-              const attr: StringMap = mapHeaders(message.headers);
+              const attr: StringMap|undefined = mapHeaders(message.headers);
               await handle(data, attr, message);
             } else {
               if (this.logError) {
@@ -56,22 +56,21 @@ export class Subscriber<T> {
     }
   }
 }
-
-export function mapHeaders(headers?: IHeaders): StringMap {
+export function mapHeaders(headers?: IHeaders): StringMap|undefined {
+  if (!headers) {
+    return undefined;
+  }
   const attr: StringMap = {};
-  if (headers) {
-    const keys = Object.keys(headers);
-    for (const key of keys) {
-      const tam = headers[key];
-      if (tam) {
-        if (Buffer.isBuffer(tam)) {
-          attr[key] = tam.toString();
-        }
-        if (typeof tam === 'string') {
-          attr[key] = tam;
-        }
+  const keys = Object.keys(headers);
+  for (const key of keys) {
+    const tam = headers[key];
+    if (tam) {
+      if (Buffer.isBuffer(tam)) {
+        attr[key] = tam.toString();
+      } else if (typeof tam === 'string') {
+        attr[key] = tam;
       } else {
-        attr[key] = '';
+        attr[key] = '' + tam;
       }
     }
   }

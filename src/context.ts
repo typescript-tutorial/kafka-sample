@@ -4,7 +4,7 @@ import { Db } from 'mongodb';
 import { MongoChecker, MongoUpserter } from 'mongodb-extension';
 import { ErrorHandler, Handler, RetryService, RetryWriter, StringMap } from 'mq-one';
 import { Attributes, Validator } from 'xvalidators';
-import { ClientConfig, ConsumerConfig, createKafkaChecker, createSender, createSubscriber, ProducerConfig } from './kafka';
+import { ClientConfig, ConsumerConfig, createConsumer, createKafkaChecker, createProducer, ProducerConfig } from './kafka';
 
 const client: ClientConfig = {
   username: 'ah1t9hk0',
@@ -73,18 +73,20 @@ export function createContext(db: Db): ApplicationContext {
   const kafkaChecker = createKafkaChecker(client);
   const health = new HealthController([mongoChecker, kafkaChecker]);
   const writer = new MongoUpserter(db.collection('users'), 'id');
+  /*
   const retryWriter = new RetryWriter(writer.write, retries, writeUser, log);
-  const sender = createSender<User>(producerConfig, log);
+  const sender = createProducer<User>(producerConfig, log);
   const retryService = new RetryService<User, RecordMetadata[]>(sender.send, log, log);
+  */
   const errorHandler = new ErrorHandler(log);
   const validator = new Validator<User>(user, true);
-  const handler = new Handler<User, RecordMetadata[]>(retryWriter.write, validator.validate, retries, errorHandler.error, log, log, retryService.retry, 3, 'retry');
-  const subscriber = createSubscriber<User>(consumerConfig, log, log);
+  const handler = new Handler<User, RecordMetadata[]>(writer.write, validator.validate, retries, errorHandler.error, log, log, undefined, 3, 'retry');
+  const subscriber = createConsumer<User>(consumerConfig, log, log);
   const ctx: ApplicationContext = { read: subscriber.subscribe, handle: handler.handle, health };
   return ctx;
 }
 export function log(msg: any): void {
-  console.log(JSON.stringify(msg));
+  console.log(typeof msg === 'string' ? msg : JSON.stringify(msg));
 }
 export function writeUser(msg: User): Promise<number> {
   console.log('Error: ' + JSON.stringify(msg));
