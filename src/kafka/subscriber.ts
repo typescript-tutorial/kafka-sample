@@ -26,7 +26,7 @@ export class Subscriber<T> {
   ) {
     this.subscribe = this.subscribe.bind(this);
   }
-  async subscribe(handle: (data: T, attributes?: StringMap, raw?: KafkaMessage) => Promise<number>): Promise<void> {
+  async subscribe(handle: (data: T, headers?: StringMap, raw?: KafkaMessage) => Promise<number>): Promise<void> {
     try {
       // fromBeginning config option calling, true for "earliest" , false for "latest"
       await this.consumer.subscribe({ topic: this.topic, fromBeginning: true });
