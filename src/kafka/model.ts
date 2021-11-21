@@ -14,10 +14,6 @@ export interface ClientConfig {
   brokers: string[];
 }
 export interface RetryConfig {
-  retryCountName: string;
-  limitRetry: number;
-}
-export interface RetryConfig {
-  retryCountName: string;
-  limitRetry: number;
+  count: string;
+  limit: number;
 }

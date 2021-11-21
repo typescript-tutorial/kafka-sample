@@ -3,7 +3,7 @@ import { RecordMetadata } from 'kafkajs';
 import { Db } from 'mongodb';
 import { MongoChecker, MongoUpserter } from 'mongodb-extension';
 import { ErrorHandler, Handler, RetryService, RetryWriter, StringMap } from 'mq-one';
-import { Attributes, Validator } from 'validation-core';
+import { Attributes, Validator } from 'xvalidators';
 import { ClientConfig, ConsumerConfig, createKafkaChecker, createSender, createSubscriber, ProducerConfig } from './kafka';
 
 const client: ClientConfig = {
@@ -25,8 +25,8 @@ const consumerConfig: ConsumerConfig = {
   groupId: 'my-group',
   topic: 'ah1t9hk0-default',
   retry: {
-    retryCountName: 'retry',
-    limitRetry: 3,
+    count: 'retry',
+    limit: 3,
   }
 };
 

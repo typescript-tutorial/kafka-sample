@@ -1,4 +1,4 @@
-import { Consumer, IHeaders } from 'kafkajs';
+import { Consumer, IHeaders, KafkaMessage } from 'kafkajs';
 import { StringMap, toString } from 'mq-one';
 import { connect } from './connect';
 import { createKafka } from './kafka';
@@ -26,7 +26,7 @@ export class Subscriber<T> {
   ) {
     this.subscribe = this.subscribe.bind(this);
   }
-  async subscribe(handle: (data: T, attributes?: StringMap) => Promise<number>): Promise<void> {
+  async subscribe(handle: (data: T, attributes?: StringMap, raw?: KafkaMessage) => Promise<number>): Promise<void> {
     try {
       // fromBeginning config option calling, true for "earliest" , false for "latest"
       await this.consumer.subscribe({ topic: this.topic, fromBeginning: true });
@@ -35,8 +35,8 @@ export class Subscriber<T> {
           try {
             if (message.value) {
               const data = (this.json ? JSON.parse(message.value.toString()) : message.value.toString());
-              const attr: StringMap = mapHeader(message.headers);
-              await handle(data, attr);
+              const attr: StringMap = mapHeaders(message.headers);
+              await handle(data, attr, message);
             } else {
               if (this.logError) {
                 this.logError('Message is empty');
@@ -57,7 +57,7 @@ export class Subscriber<T> {
   }
 }
 
-export function mapHeader(headers?: IHeaders): StringMap {
+export function mapHeaders(headers?: IHeaders): StringMap {
   const attr: StringMap = {};
   if (headers) {
     const keys = Object.keys(headers);
