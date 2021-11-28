@@ -4,7 +4,7 @@ import { connect } from './connect';
 import { createKafka } from './kafka';
 import { ConsumerConfig } from './model';
 
-export function createKafkaConsumer(conf: ConsumerConfig, logInfo?: (msg: any) => void): KafkaConsumer {
+export function createKafkaConsumer(conf: ConsumerConfig, logInfo?: (msg: string) => void): KafkaConsumer {
   const kafka = createKafka(conf.client.username, conf.client.password, conf.client.brokers);
   const consumer = kafka.consumer({
     groupId: conf.groupId,
@@ -12,7 +12,7 @@ export function createKafkaConsumer(conf: ConsumerConfig, logInfo?: (msg: any) =
   connect(consumer, 'Consumer', logInfo);
   return consumer;
 }
-export function createConsumer<T>(conf: ConsumerConfig, logError?: (msg: any) => void, logInfo?: (msg: any) => void, json?: boolean): Consumer<T> {
+export function createConsumer<T>(conf: ConsumerConfig, logError?: (msg: string) => void, logInfo?: (msg: string) => void, json?: boolean): Consumer<T> {
   const c = createKafkaConsumer(conf, logInfo);
   const s = new Consumer<T>(c, conf.topic, logError, json);
   return s;
@@ -21,7 +21,7 @@ export class Consumer<T> {
   constructor(
     public consumer: KafkaConsumer,
     public topic: string,
-    public logError?: (msg: any) => void,
+    public logError?: (msg: string) => void,
     public json?: boolean
   ) {
     this.subscribe = this.subscribe.bind(this);
@@ -32,19 +32,26 @@ export class Consumer<T> {
       await this.consumer.subscribe({ topic: this.topic, fromBeginning: true });
       await this.consumer.run({
         eachMessage: async ({ message }) => {
+          let s: string|undefined;
           try {
             if (message.value) {
-              const data = (this.json ? JSON.parse(message.value.toString()) : message.value.toString());
+              s = message.value.toString();
+              const data = (this.json ? JSON.parse(s) : s);
               const attr: StringMap|undefined = mapHeaders(message.headers);
               await handle(data, attr, message);
             } else {
+              s = undefined;
               if (this.logError) {
                 this.logError('Message is empty');
               }
             }
           } catch (err) {
             if (err && this.logError) {
-              this.logError('Fail to consume message: ' + toString(err));
+              if (s) {
+                this.logError('Fail to consume message: ' + s + ' ' + toString(err));
+              } else {
+                this.logError('Error: ' + toString(err));
+              }
             }
           }
         },

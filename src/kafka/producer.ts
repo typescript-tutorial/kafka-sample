@@ -4,13 +4,13 @@ import { connect } from './connect';
 import { createKafka } from './kafka';
 import { ProducerConfig } from './model';
 
-export function createKafkaProducer(conf: ProducerConfig, log?: (msg: any) => void): KafkaProducer {
+export function createKafkaProducer(conf: ProducerConfig, log?: (msg: string) => void): KafkaProducer {
   const kafka = createKafka(conf.client.username, conf.client.password, conf.client.brokers);
   const producer = kafka.producer();
   connect(producer, 'Producer', log);
   return producer;
 }
-export function createProducer<T>(conf: ProducerConfig, log?: (msg: any) => void): Producer<T> {
+export function createProducer<T>(conf: ProducerConfig, log?: (msg: string) => void): Producer<T> {
   const p = createKafkaProducer(conf, log);
   const s = new Producer(p, conf.topic);
   return s;

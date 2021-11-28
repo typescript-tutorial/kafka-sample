@@ -1,6 +1,6 @@
 import { Consumer, Producer } from 'kafkajs';
 
-export function connect(kafka: Consumer | Producer, name: string, log?: (msg: any) => void): Promise<void> {
+export function connect(kafka: Consumer | Producer, name: string, log?: (msg: string) => void): Promise<void> {
   const lg = (log ? log : console.log);
   if (!log) {
     log = console.log;
