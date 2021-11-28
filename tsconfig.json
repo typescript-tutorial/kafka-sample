@@ -10,10 +10,11 @@
     "strict": true,
     "sourceMap": false,
     "esModuleInterop": true,
+    "declaration": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "experimentalDecorators": false,
+    "removeComments": true
   },
   "include": [
     "src/**/*.ts"
