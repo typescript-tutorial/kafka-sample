@@ -14,6 +14,6 @@ export interface ClientConfig {
   brokers: string[];
 }
 export interface RetryConfig {
-  count: string;
+  name: string;
   limit: number;
 }

@@ -20,7 +20,7 @@
     "logger-core": "^0.1.2",
     "mongodb": "^3.6.9",
     "mongodb-extension": "^0.1.7",
-    "mq-one": "^0.1.3",
+    "mq-one": "^0.1.4",
     "xvalidators": "^0.0.1"
   },
   "devDependencies": {

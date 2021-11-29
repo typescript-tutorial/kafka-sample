@@ -1,5 +1,5 @@
 export const config = {
-  port: 8081,
+  port: 8080,
   log: {
     level: 'info',
     map: {
@@ -11,7 +11,7 @@ export const config = {
     uri: 'mongodb://localhost:27017',
     db: 'masterdata'
   },
-  retry: {
+  retries: {
     1: 10000,
     2: 15000,
     3: 25000,
@@ -25,7 +25,7 @@ export const config = {
     groupId: 'my-group',
     topic: 'ah1t9hk0-default',
     retry: {
-      count: 'retry',
+      name: 'retry',
       limit: 3,
     }
   },
