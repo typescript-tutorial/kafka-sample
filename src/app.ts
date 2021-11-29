@@ -15,7 +15,7 @@ app.use(json());
 
 connectToDb(`${conf.mongo.uri}`, `${conf.mongo.db}`).then(db => {
   const ctx = createContext(db, conf);
-  ctx.read(ctx.handle);
+  ctx.subscribe(ctx.handle);
   app.get('/health', ctx.health.check);
   http.createServer(app).listen(conf.port, () => {
     console.log('Start server at port ' + conf.port);

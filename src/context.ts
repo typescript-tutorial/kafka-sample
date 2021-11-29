@@ -44,7 +44,7 @@ export interface Config {
 }
 export interface ApplicationContext {
   health: HealthController;
-  read: (handle: (data: User, attributes?: StringMap) => Promise<number>) => Promise<void>;
+  subscribe: (handle: (data: User, attributes?: StringMap) => Promise<number>) => Promise<void>;
   handle: (data: User, header?: StringMap) => Promise<number>;
 }
 export function createContext(db: Db, conf: Config): ApplicationContext {
@@ -65,7 +65,7 @@ export function createContext(db: Db, conf: Config): ApplicationContext {
   const errorHandler = new ErrorHandler(logger.error);
   const handler = new Handler<User, RecordMetadata[]>(writer.write, validator.validate, retries, errorHandler.error, logger.error, logger.info, undefined, 3, 'retry');
 
-  const ctx: ApplicationContext = { health, read: subscriber.subscribe, handle: handler.handle };
+  const ctx: ApplicationContext = { health, subscribe: subscriber.subscribe, handle: handler.handle };
   return ctx;
 }
 export function writeUser(msg: User): Promise<number> {
