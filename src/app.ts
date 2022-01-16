@@ -15,8 +15,13 @@ app.use(json());
 
 connectToDb(`${conf.mongo.uri}`, `${conf.mongo.db}`).then(db => {
   const ctx = createContext(db, conf);
-  ctx.subscribe(ctx.handle);
+  ctx.consume(ctx.handle);
   app.get('/health', ctx.health.check);
+  app.patch('/log', ctx.log.config);
+  app.post('/send', (req, res) => {
+    ctx.produce(req.body).then(r => res.json({ message: 'message was produced'}))
+      .catch(err => res.json({ error: err }));
+  });
   http.createServer(app).listen(conf.port, () => {
     console.log('Start server at port ' + conf.port);
   });

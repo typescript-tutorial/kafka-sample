@@ -4,6 +4,7 @@ import { connect } from './connect';
 import { createKafka } from './kafka';
 import { ConsumerConfig } from './model';
 
+export type Handle<T> = (data: T, headers?: StringMap, raw?: KafkaMessage) => Promise<number>;
 export function createKafkaConsumer(conf: ConsumerConfig, logInfo?: (msg: string) => void): KafkaConsumer {
   const kafka = createKafka(conf.client.username, conf.client.password, conf.client.brokers);
   const consumer = kafka.consumer({
@@ -12,11 +13,17 @@ export function createKafkaConsumer(conf: ConsumerConfig, logInfo?: (msg: string
   connect(consumer, 'Consumer', logInfo);
   return consumer;
 }
+export const createKafkaSubscriber = createKafkaConsumer;
+export const createKafkaReader = createKafkaConsumer;
+export const createKafkaReceiver = createKafkaConsumer;
 export function createConsumer<T>(conf: ConsumerConfig, logError?: (msg: string) => void, logInfo?: (msg: string) => void, json?: boolean): Consumer<T> {
   const c = createKafkaConsumer(conf, logInfo);
   const s = new Consumer<T>(c, conf.topic, logError, json);
   return s;
 }
+export const createSubscriber = createConsumer;
+export const createReader = createConsumer;
+export const createReceiver = createConsumer;
 export class Consumer<T> {
   constructor(
     public consumer: KafkaConsumer,
@@ -24,9 +31,25 @@ export class Consumer<T> {
     public logError?: (msg: string) => void,
     public json?: boolean
   ) {
+    this.consume = this.consume.bind(this);
+    this.get = this.get.bind(this);
+    this.receive = this.receive.bind(this);
+    this.read = this.read.bind(this);
     this.subscribe = this.subscribe.bind(this);
   }
-  async subscribe(handle: (data: T, headers?: StringMap, raw?: KafkaMessage) => Promise<number>): Promise<void> {
+  get(handle: Handle<T>): Promise<void> {
+    return this.consume(handle);
+  }
+  receive(handle: Handle<T>): Promise<void> {
+    return this.consume(handle);
+  }
+  read(handle: Handle<T>): Promise<void> {
+    return this.consume(handle);
+  }
+  subscribe(handle: Handle<T>) {
+    return this.consume(handle);
+  }
+  async consume(handle: Handle<T>): Promise<void> {
     try {
       // fromBeginning config option calling, true for "earliest" , false for "latest"
       await this.consumer.subscribe({ topic: this.topic, fromBeginning: true });
@@ -63,6 +86,10 @@ export class Consumer<T> {
     }
   }
 }
+export const Subscriber = Consumer;
+export const Reader = Consumer;
+export const Receiver = Consumer;
+
 export function mapHeaders(headers?: IHeaders): StringMap|undefined {
   if (!headers) {
     return undefined;

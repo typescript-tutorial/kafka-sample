@@ -1,11 +1,11 @@
-import { HealthController } from 'express-ext';
+import { HealthController, LogController } from 'express-ext';
 import { RecordMetadata } from 'kafkajs';
-import { JSONLogger, LogConfig } from 'logger-core';
+import { createLogger, LogConfig, map } from 'logger-core';
 import { Db } from 'mongodb';
 import { MongoChecker, MongoUpserter } from 'mongodb-extension';
-import { createRetry, ErrorHandler, Handler, NumberMap, StringMap } from 'mq-one';
+import { createRetry, ErrorHandler, Handle, Handler, NumberMap, StringMap } from 'mq-one';
 import { Attributes, Validator } from 'xvalidators';
-import { ConsumerConfig, createConsumer, createKafkaChecker } from './kafka';
+import { ConsumerConfig, createConsumer, createKafkaChecker, createProducer, ProducerConfig } from './kafka';
 
 export interface User {
   id: string;
@@ -36,37 +36,35 @@ export const user: Attributes = {
     type: 'datetime'
   }
 };
-export interface Config {
+export interface Config extends LogConfig {
   port?: number;
-  log: LogConfig;
   consumer: ConsumerConfig;
+  producer: ProducerConfig;
   retries?: NumberMap;
 }
 export interface ApplicationContext {
   health: HealthController;
-  subscribe: (handle: (data: User, attributes?: StringMap) => Promise<number>) => Promise<void>;
-  handle: (data: User, header?: StringMap) => Promise<number>;
+  log: LogController;
+  produce: (data: User) => Promise<RecordMetadata[]>;
+  consume: (handle: Handle<User>) => Promise<void>;
+  handle: Handle<User>;
 }
 export function createContext(db: Db, conf: Config): ApplicationContext {
   const retries = createRetry(conf.retries);
-  const logger = new JSONLogger(conf.log.level, conf.log.map);
+  const logger = createLogger(conf.log);
+  const log = new LogController(logger, map);
   const mongoChecker = new MongoChecker(db);
   const kafkaChecker = createKafkaChecker(conf.consumer.client);
   const health = new HealthController([mongoChecker, kafkaChecker]);
 
-  const subscriber = createConsumer<User>(conf.consumer, logger.error, logger.info);
-
   const validator = new Validator<User>(user, true);
   const writer = new MongoUpserter(db.collection('users'), 'id');
-/*
-  const retryWriter = new RetryWriter(writer.write, retries, writeUser, logger.error);
-  const sender = createProducer<User>(producerConfig, logger.info);
-  const retryService = new RetryService<User, RecordMetadata[]>(sender.send, logger.error, logger.info); */
   const errorHandler = new ErrorHandler(logger.error);
   const handler = new Handler<User, RecordMetadata[]>(writer.write, validator.validate, retries, errorHandler.error, logger.error, logger.info, undefined, 3, 'retry');
 
-  const ctx: ApplicationContext = { health, subscribe: subscriber.subscribe, handle: handler.handle };
-  return ctx;
+  const consumer = createConsumer<User>(conf.consumer, logger.error, logger.info);
+  const producer = createProducer<User>(conf.producer, logger.info);
+  return { health, log, produce: producer.produce, consume: consumer.consume, handle: handler.handle };
 }
 export function writeUser(msg: User): Promise<number> {
   console.log('Error: ' + JSON.stringify(msg));

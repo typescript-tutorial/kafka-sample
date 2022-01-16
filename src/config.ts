@@ -1,5 +1,5 @@
 export const config = {
-  port: 8080,
+  port: 8084,
   log: {
     level: 'info',
     map: {
@@ -18,7 +18,7 @@ export const config = {
   },
   consumer: {
     client: {
-      username: 'ah1t9hk0xx',
+      username: 'ah1t9hk0',
       password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
       brokers: ['tricycle-01.srvs.cloudkafka.com:9094'],
     },
