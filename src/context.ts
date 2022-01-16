@@ -1,9 +1,9 @@
-import { HealthController, LogController } from 'express-ext';
+import { HealthController } from 'health-service';
 import { RecordMetadata } from 'kafkajs';
-import { createLogger, LogConfig, map } from 'logger-core';
+import { createLogger, LogConfig, LogController, map } from 'logger-core';
 import { Db } from 'mongodb';
 import { MongoChecker, MongoUpserter } from 'mongodb-extension';
-import { createRetry, ErrorHandler, Handle, Handler, NumberMap, StringMap } from 'mq-one';
+import { createRetry, ErrorHandler, Handle, Handler, NumberMap } from 'mq-one';
 import { Attributes, Validator } from 'xvalidators';
 import { ConsumerConfig, createConsumer, createKafkaChecker, createProducer, ProducerConfig } from './kafka';
 
