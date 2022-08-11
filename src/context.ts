@@ -1,11 +1,12 @@
 import { HealthController } from 'health-service';
 import { RecordMetadata } from 'kafkajs';
 import { createLogger, LogConfig, LogController, map } from 'logger-core';
-import { Db } from 'mongodb';
-import { MongoChecker, MongoUpserter } from 'mongodb-extension';
 import { createRetry, ErrorHandler, Handle, Handler, NumberMap } from 'mq-one';
 import { Attributes, Validator } from 'xvalidators';
 import { ConsumerConfig, createConsumer, createKafkaChecker, createProducer, ProducerConfig } from './kafka';
+import { DB } from 'pg-extension';
+import { Repository } from 'query-core';
+
 
 export interface User {
   id: string;
@@ -16,7 +17,7 @@ export interface User {
 }
 export const user: Attributes = {
   id: {
-    length: 40
+    length: 40 
   },
   username: {
     required: true,
@@ -49,21 +50,22 @@ export interface ApplicationContext {
   consume: (handle: Handle<User>) => Promise<void>;
   handle: Handle<User>;
 }
-export function createContext(db: Db, conf: Config): ApplicationContext {
+export function createContext(db: DB, conf: Config): ApplicationContext {
   const retries = createRetry(conf.retries);
   const logger = createLogger(conf.log);
   const log = new LogController(logger, map);
-  const mongoChecker = new MongoChecker(db);
   const kafkaChecker = createKafkaChecker(conf.consumer.client);
-  const health = new HealthController([mongoChecker, kafkaChecker]);
+  const health = new HealthController([kafkaChecker]);
 
   const validator = new Validator<User>(user, true);
-  const writer = new MongoUpserter(db.collection('users'), 'id');
+  const repository = new Repository<User, string>(db, 'kafka', user);
+
   const errorHandler = new ErrorHandler(logger.error);
-  const handler = new Handler<User, RecordMetadata[]>(writer.write, validator.validate, retries, errorHandler.error, logger.error, logger.info, undefined, 3, 'retry');
+  const handler = new Handler<User, RecordMetadata[]>(repository.insert, validator.validate, retries, errorHandler.error, logger.error, logger.info, undefined, 3, 'retry');
 
   const consumer = createConsumer<User>(conf.consumer, logger.error, logger.info);
   const producer = createProducer<User>(conf.producer, logger.info);
+  console.log(producer.produce);
   return { health, log, produce: producer.produce, consume: consumer.consume, handle: handler.handle };
 }
 export function writeUser(msg: User): Promise<number> {
