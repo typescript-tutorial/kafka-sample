@@ -1,11 +1,11 @@
 export const config = {
   port: 8084,
   log: {
-    level: 'info',
+    level: "info",
     map: {
-      time: '@timestamp',
-      msg: 'message'
-    }
+      time: "@timestamp",
+      msg: "message",
+    },
   },
   postgres: {
     connectionString: "postgres://postgres:abcd1234@localhost/masterdata",
@@ -26,31 +26,31 @@ export const config = {
   },
   consumer: {
     client: {
-      username: 'ah1t9hk0',
-      password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
-      brokers: ['tricycle-01.srvs.cloudkafka.com:9094'],
+      username: "ah1t9hk0",
+      password: "QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-",
+      brokers: ["tricycle-01.srvs.cloudkafka.com:9094"],
     },
-    groupId: 'my-group',
-    topic: 'ah1t9hk0-default',
+    groupId: "my-group",
+    topic: "ah1t9hk0-default",
     retry: {
-      name: 'retry',
+      name: "retry",
       limit: 3,
-    }
+    },
   },
   producer: {
     client: {
-      username: 'ah1t9hk0',
-      password: 'QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-',
-      brokers: ['tricycle-01.srvs.cloudkafka.com:9094', 'tricycle-02.srvs.cloudkafka.com:9094', 'tricycle-03.srvs.cloudkafka.com:9094'],
+      username: "ah1t9hk0",
+      password: "QvMB75cxJ48KYRnGfwXcRNxzALyAeb7-",
+      brokers: ["tricycle-01.srvs.cloudkafka.com:9094", "tricycle-02.srvs.cloudkafka.com:9094", "tricycle-03.srvs.cloudkafka.com:9094"],
     },
-    topic: 'ah1t9hk0-default'
-  }
-};
+    topic: "ah1t9hk0-default",
+  },
+}
 export const env = {
   sit: {
     mongo: {
-      uri: 'mongodb://localhostx:27017',
-      db: 'masterdata2'
+      uri: "mongodb://localhostx:27017",
+      db: "masterdata2",
     },
-  }
-};
+  },
+}
