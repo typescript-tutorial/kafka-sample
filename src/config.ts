@@ -8,6 +8,8 @@ export const config = {
     }
   },
   postgres: {
+    connectionString: "postgres://postgres:abcd1234@localhost/masterdata",
+    /*
     user: 'dqcpsquyjmmxkb',
     host: 'ec2-54-228-125-183.eu-west-1.compute.amazonaws.com',
     password: '1093639f514498fbf09e803d98714b853849704783dc052aa1ef2039c60fe6e0',
@@ -15,7 +17,7 @@ export const config = {
     port: 5432,
     ssl: {
       rejectUnauthorized: false,
-    }
+    }*/
   },
   retries: {
     1: 10000,

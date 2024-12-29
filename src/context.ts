@@ -2,10 +2,10 @@ import { HealthController } from 'health-service';
 import { RecordMetadata } from 'kafkajs';
 import { createLogger, LogConfig, LogController, map } from 'logger-core';
 import { createRetry, ErrorHandler, Handle, Handler, NumberMap } from 'mq-one';
-import { Attributes, Validator } from 'xvalidators';
+import { Validator } from 'xvalidators';
 import { ConsumerConfig, createConsumer, createKafkaChecker, createProducer, ProducerConfig } from './kafka';
 import { DB } from 'pg-extension';
-import { Repository } from 'query-core';
+import { Attributes, createChecker, Repository } from 'query-core';
 
 
 export interface User {
@@ -34,7 +34,8 @@ export const user: Attributes = {
     length: 14
   },
   dateOfBirth: {
-    type: 'datetime'
+    column: "date_of_birth",
+    type: "datetime",
   }
 };
 export interface Config extends LogConfig {
@@ -55,13 +56,14 @@ export function createContext(db: DB, conf: Config): ApplicationContext {
   const logger = createLogger(conf.log);
   const log = new LogController(logger, map);
   const kafkaChecker = createKafkaChecker(conf.consumer.client);
-  const health = new HealthController([kafkaChecker]);
+  const sqlChecker = createChecker(db)
+  const health = new HealthController([kafkaChecker, sqlChecker]);
 
   const validator = new Validator<User>(user, true);
-  const repository = new Repository<User, string>(db, 'kafka', user);
+  const repository = new Repository<User, string>(db, 'users', user);
 
   const errorHandler = new ErrorHandler(logger.error);
-  const handler = new Handler<User, RecordMetadata[]>(repository.insert, validator.validate, retries, errorHandler.error, logger.error, logger.info, undefined, 3, 'retry');
+  const handler = new Handler<User, RecordMetadata[]>(repository.create, validator.validate, retries, errorHandler.error, logger.error, logger.info, undefined, 3, 'retry');
 
   const consumer = createConsumer<User>(conf.consumer, logger.error, logger.info);
   const producer = createProducer<User>(conf.producer, logger.info);
